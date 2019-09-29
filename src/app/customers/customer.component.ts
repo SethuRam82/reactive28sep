@@ -3,6 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormGroup, FormControl, FormBuilder, Validators, AbstractControl, ValidatorFn } from '@angular/forms';
 
 import { Customer } from './customer';
+import { debounceTime } from 'rxjs/operators';
 
 function emailMatcher (c: AbstractControl): { [key: string]: boolean } | null {
   const emailControl = c.get('email');
@@ -17,11 +18,17 @@ function emailMatcher (c: AbstractControl): { [key: string]: boolean } | null {
 }
 
 
+// function ratingRange(c: AbstractControl) : { [key: string]: boolean } | null{
+//   if(c.value !== null && (isNaN(c.value) || c.value < 1 || c.value > 5 )){
+//     return {'range': true};
+//   }
+//   return null;
+// }
+
 function ratingRange(min: number, max: number): ValidatorFn
 {
 
  return (c: AbstractControl) : { [key: string]: boolean } | null => { 
-// function ratingRange(c: AbstractControl) : { [key: string]: boolean } | null{
   if(c.value !== null && (isNaN(c.value) || c.value < min || c.value > max )){
     return {'range': true};
   }
@@ -37,7 +44,12 @@ function ratingRange(min: number, max: number): ValidatorFn
 export class CustomerComponent implements OnInit {
   customer = new Customer();
   customerForm: FormGroup;
+  emailMessage: string;
 
+  private validationMessages = {
+    required: 'Please enter your email address.',
+    email: 'Please enter a valid email address.'
+  };
 
   constructor(private fb: FormBuilder) { }
 
@@ -50,13 +62,23 @@ export class CustomerComponent implements OnInit {
         emailGroup: this.fb.group({
          email: ['',[Validators.required, Validators.email]],
          confirmEmail: ['', Validators.required]
-        },{validator: emailMatcher}),  
+        },{Validator: emailMatcher}),  
         phone: '',
         notification: 'email',
         rating: [null, ratingRange(1,5)],
         sendCatalog: true
       }
     );
+
+    this.customerForm.get('notification').valueChanges.subscribe(
+        value => this.setNotification(value)
+    );
+
+    const emailControl = this.customerForm.get('emailGroup.email');
+    emailControl.valueChanges.pipe(debounceTime(1000)).subscribe(
+      value => this.setMessage(emailControl)
+    );
+
   // this.customerForm = new FormGroup(
   //   {
   //     firstName: new FormControl(),
@@ -94,4 +116,14 @@ export class CustomerComponent implements OnInit {
     console.log(this.customerForm);
     console.log('Saved: ' + JSON.stringify(this.customerForm.value));
   }
+
+  setMessage(c: AbstractControl): void {
+    this.emailMessage ='';
+    if((c.touched || c.dirty) && c.errors)
+    {
+      this.emailMessage = Object.keys(c.errors).map(
+        keys => this.validationMessages[keys]).join('');
+    }
+  }
+  
 }

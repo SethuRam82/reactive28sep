@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-// import { NgForm } from '@angular/forms';
-import { FormGroup, FormControl, FormBuilder, Validators, AbstractControl, ValidatorFn } from '@angular/forms';
+ import { NgForm } from '@angular/forms';
+import { FormGroup, FormControl, FormBuilder, Validators, AbstractControl, ValidatorFn, FormArray } from '@angular/forms';
 
 import { Customer } from './customer';
 import { debounceTime } from 'rxjs/operators';
@@ -46,6 +46,10 @@ export class CustomerComponent implements OnInit {
   customerForm: FormGroup;
   emailMessage: string;
 
+  get addresses(): FormArray{
+    return <FormArray> this.customerForm.get('addresses');
+  }
+
   private validationMessages = {
     required: 'Please enter your email address.',
     email: 'Please enter a valid email address.'
@@ -65,8 +69,11 @@ export class CustomerComponent implements OnInit {
         },{Validator: emailMatcher}),  
         phone: '',
         notification: 'email',
-        rating: [null, ratingRange(1,5)],
-        sendCatalog: true
+        rating: [1, ratingRange(1,5)],
+        sendCatalog: true,
+        addresses: this.fb.array([this.buildAddress()])
+        // addresses: this.buildAddress()
+
       }
     );
 
@@ -101,12 +108,28 @@ export class CustomerComponent implements OnInit {
     phoneControl.updateValueAndValidity();
   }
 
+  addAddress(): void{
+    this.addresses.push(this.buildAddress());
+  }
+  buildAddress(): FormGroup {
+    return this.fb.group(
+      {
+        adrressType: 'home',
+          street1: '',
+          street2: '',
+          city: '',
+          state: '',
+          zip: ''
+      }
+    )
+  }
   populateTestData(): void {
     this.customerForm.patchValue(
       {
         firstName: 'Sethu',
         lastName: 'Ram',
         email: 'abc@gmail.com',
+        confirmEmail: 'jjfj@gmail.com',
         sendCatalog: false
       }
     );

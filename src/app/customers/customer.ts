@@ -4,6 +4,8 @@ export class Customer {
     public firstName = '',
     public lastName = '',
     public email = '',
+    public confirmEmail = '',
+    public rating = '',
     public sendCatalog = false,
     public addressType = 'home',
     public street1?: string,
